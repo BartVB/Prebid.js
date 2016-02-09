@@ -71,12 +71,16 @@ var OpenxAdapter = function OpenxAdapter(options) {
 						adUnit = response.getOrCreateAdUnit(bid.params.unit);
 
 						// If 'pub_rev' (CPM) isn't returned we got an empty response
-						if (adUnit.get('pub_rev')) {
+						if (adUnit.get('pub_rev') || !adUnit.get('is_fallback')) {
 							adResponse = adResponse = bidfactory.createBid(1);
 
 							adResponse.bidderCode = 'openx';
 							adResponse.ad_id = adUnit.get('ad_id');
-							adResponse.cpm = Number(adUnit.get('pub_rev')) / 1000;
+							if(adUnit.get('pub_rev')) {
+								adResponse.cpm = Number(adUnit.get('pub_rev')) / 1000;
+							} else {
+								adResponse.cpm = 1.00;
+							}
 							adResponse.ad = adUnit.get('html');
 							adResponse.adUrl = adUnit.get('ad_url');
 							adResponse.width = adUnit.get('width');
