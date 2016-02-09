@@ -100,11 +100,7 @@ exports.extend = function(target, source){
 	target = target || {};
 
 	this._each(source,function(value,prop){    
-		if (typeof source[prop] === objectType_object) {
-			target[prop] = this.extend(target[prop], source[prop]);
-		} else {
-			target[prop] = source[prop];
-		}
+		target[prop] = source[prop];
 	});
 	return target;
 };
