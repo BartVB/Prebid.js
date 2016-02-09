@@ -226,8 +226,8 @@ function setGPTAsyncTargeting(code, slot) {
 	for (var key in keyStrings) {
 		if (keyStrings.hasOwnProperty(key)) {
 			try {
-				utils.logMessage('Attempting to set key value for slot: ' + slot.getSlotElementId() + ' key: ' + key + ' value: ' + encodeURIComponent(keyStrings[key]));
-				slot.setTargeting(key, encodeURIComponent(keyStrings[key]));
+				utils.logMessage('Attempting to set key value for slot: ' + slot.getSlotElementId() + ' key: ' + key + ' value: ' + keyStrings[key]);
+				slot.setTargeting(key, keyStrings[key]);
 
 			} catch (e) {
 				utils.logMessage('Problem setting key value pairs in slot: ' + e.message);
