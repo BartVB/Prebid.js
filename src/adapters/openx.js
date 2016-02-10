@@ -81,7 +81,16 @@ var OpenxAdapter = function OpenxAdapter(options) {
 							} else {
 								adResponse.cpm = 1.00;
 							}
+
 							adResponse.ad = adUnit.get('html');
+							// Add impression pixel to the creative HTML
+							var recordPixel = OX.utils.template(response.getRecordTemplate(), {
+								medium : OX.utils.getMedium(),
+								rtype : OX.Resources.RI,
+								txn_state : adUnit.get('ts')
+							});
+							adResponse.ad += '<div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="' + recordPixel + '"></div>';
+
 							adResponse.adUrl = adUnit.get('ad_url');
 							adResponse.width = adUnit.get('width');
 							adResponse.height = adUnit.get('height');
