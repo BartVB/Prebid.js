@@ -224,10 +224,6 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
 			return;
 		}
 
-		if (!cygnus_index_args.siteID) {
-			return;
-		}
-
 		cygnus_index_args.slots = [];
 		var bidCount = 0;
 
@@ -253,7 +249,7 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
 				cygnus_index_args.timeout = bid.params.timeout;
 			}
 
-			if (bid.params.siteID && typeof cygnus_index_args.timeout === 'undefined') {
+			if (bid.params.siteID && typeof cygnus_index_args.siteID === 'undefined') {
 				cygnus_index_args.siteID = bid.params.siteID;
 			}
 

@@ -1,6 +1,10 @@
+var utils = require('./utils');
 //add a script tag to the page, used to add /jpt call to page
 exports.loadScript = function(tagSrc, callback) {
-	//create a script tag for the jpt call
+	if(!tagSrc) {
+		utils.logError('Error attempting to request empty URL', 'adloader.js:loadScript');
+		return;
+	}
 	var jptScript = document.createElement('script');
 	jptScript.type = 'text/javascript';
 	jptScript.async = true;
@@ -34,23 +38,18 @@ exports.loadScript = function(tagSrc, callback) {
 	}
 };
 
+//track a impbus tracking pixel
+//TODO: Decide if tracking via AJAX is sufficent, or do we need to
+//run impression trackers via page pixels?
 exports.trackPixel = function(pixelUrl) {
-	//track a impbus tracking pixel
-
-	//TODO: Decide of tracking via AJAX is sufficent, or do we need to
-	//run impression trackers via page pixels?
-	try {
-
-		//add a cachebuster so we don't end up dropping any impressions
-		pixelUrl += '&rnd=' + Math.random();
-
-		if (pixelUrl) {
-			var img = document.createElement('img');
-			img.src = pixelUrl;
-		}
-
-
-	} catch (e) {
-
+	var delimiter, trackingPixel;
+	if (!pixelUrl || typeof(pixelUrl) !== 'string') {
+		utils.logMessage('Missing or invalid pixelUrl.');
+		return;
 	}
+	delimiter = pixelUrl.indexOf('?') > 0 ? '&' : '?';
+	//add a cachebuster so we don't end up dropping any impressions
+	trackingPixel = pixelUrl + delimiter + 'rnd=' + Math.floor(Math.random() * 1E7);
+	(new Image()).src = trackingPixel;
+	return trackingPixel;
 };
