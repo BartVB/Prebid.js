@@ -49,7 +49,7 @@ var OpenxFlatAdapter = function OpenxFlatAdapter(options) {
   pbjs.OpenxCbHandler = function (response) {
     for (var i = 0; i < bids.length; i++) {
       var bid = bids[i];
-      var auid = bid.params.unit;
+      var auid = parseInt(bid.params.unit);
       var bidResponse = _getResponseByAuid(response, auid);
       var adResponse = {};
 
