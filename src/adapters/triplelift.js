@@ -15,14 +15,14 @@ var TripleLiftAdapter = function TripleLiftAdapter() {
     var bidsCount = tlReq.length;
 
     //set expected bids count for callback execution
-    bidmanager.setExpectedBidsCount('triplelift',bidsCount);
+    //bidmanager.setExpectedBidsCount('triplelift',bidsCount);
 
     for (var i = 0; i < bidsCount; i++) {
-      var bidReqeust = tlReq[i];
-      var callbackId = utils.getUniqueIdentifierStr();
-      adloader.loadScript(buildTLCall(bidReqeust, callbackId));
+      var bidRequest = tlReq[i];
+      var callbackId = bidRequest.bidId;
+      adloader.loadScript(buildTLCall(bidRequest, callbackId));
       //store a reference to the bidRequest from the callback id
-      bidmanager.pbCallbackMap[callbackId] = bidReqeust;
+      //bidmanager.pbCallbackMap[callbackId] = bidRequest;
     }
 
   }
@@ -31,21 +31,24 @@ var TripleLiftAdapter = function TripleLiftAdapter() {
   function buildTLCall(bid, callbackId) {
     //determine tag params
     var inventoryCode = utils.getBidIdParamater('inventoryCode', bid.params);
+    var floor = utils.getBidIdParamater('floor', bid.params);
+
 
     //build our base tag, based on if we are http or https
     var tlURI = '//tlx.3lift.com/header/auction?';
     var tlCall = document.location.protocol + tlURI;
 
-    tlCall = utils.tryAppendQueryString(tlCall, 'callback', 'pbjs.TLCB');
+    tlCall = utils.tryAppendQueryString(tlCall, 'callback', '$$PREBID_GLOBAL$$.TLCB');
     tlCall = utils.tryAppendQueryString(tlCall, 'lib', 'prebid');
-    tlCall = utils.tryAppendQueryString(tlCall, 'lib', '0.5.0');
+    tlCall = utils.tryAppendQueryString(tlCall, 'v', '$prebid.version$');
     tlCall = utils.tryAppendQueryString(tlCall, 'callback_id', callbackId);
     tlCall = utils.tryAppendQueryString(tlCall, 'inv_code', inventoryCode);
+    tlCall = utils.tryAppendQueryString(tlCall, 'floor', floor);
 
     //sizes takes a bit more logic
     var sizeQueryString = utils.parseSizesInput(bid.sizes);
     if (sizeQueryString) {
-      tlCall += sizeQueryString + '&';
+      tlCall += 'size=' + sizeQueryString + '&';
     }
 
     //append referrer
@@ -70,10 +73,10 @@ var TripleLiftAdapter = function TripleLiftAdapter() {
 
 
   //expose the callback to the global object:
-  pbjs.TLCB = function(tlResponseObj) {
+  $$PREBID_GLOBAL$$.TLCB = function(tlResponseObj) {
     if (tlResponseObj && tlResponseObj.callback_id) {
-      var bidObj = bidmanager.pbCallbackMap[tlResponseObj.callback_id],
-      placementCode = bidObj.placementCode;
+      var bidObj = utils.getBidRequest(tlResponseObj.callback_id);
+      var placementCode = bidObj.placementCode;
 
       // @if NODE_ENV='debug'
       utils.logMessage('JSONP callback function called for inventory code: ' + bidObj.params.inventoryCode);

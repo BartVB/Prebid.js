@@ -17,15 +17,27 @@ var RubiconAdapter = function RubiconAdapter() {
   var RUBICON_OK_STATUS = 'ok';
   var RUBICON_BIDDER_CODE = 'rubicon';
   var RUBICON_SIZE_MAP = {
+    '468x60': 1,
     '728x90': 2,
+    '120x600': 8,
     '160x600': 9,
     '300x600': 10,
     '300x250': 15,
+    '336x280': 16,
     '320x50': 43,
+    '300x50': 44,
     '300x1050': 54,
-    '970x250': 57
+    '970x90': 55,
+    '970x250': 57,
+    '1000x90': 58,
+    '320x480': 67,
+    '1800x1000': 68,
+    '480x320':101,
+    '768x1024': 102,
+    '1000x300':113,
+    '320x100':117
   };
-  var RUBICON_INITIALIZED = 0;
+  var RUBICON_INITIALIZED = (window.rubicontag === undefined) ? 0 : 1;
 
   // the fastlane creative code
   var RUBICON_CREATIVE_START = '<script type="text/javascript">;(function (rt, fe) { rt.renderCreative(fe, "';
@@ -47,7 +59,7 @@ var RubiconAdapter = function RubiconAdapter() {
    * @return {Bid} a bid, for prebid
    */
   function _errorBid(response, ads) {
-    var bidResponse = bidfactory.createBid(2);
+    var bidResponse = bidfactory.createBid(2, response.bid);
     bidResponse.bidderCode = RUBICON_BIDDER_CODE;
 
     // use the raw ads as the 'error'
@@ -87,53 +99,70 @@ var RubiconAdapter = function RubiconAdapter() {
   }
 
   /**
-   * Create a (successful) bid for a unit,
+   * Create (successful) bids for a unit,
    * based on the given response
    * @param {String} placement placement code/unit path
    * @param {Object} response the response from rubicon
    * @return {Bid} a bid objectj
    */
-  function _makeBid(response, ads) {
+  function _makeBids(response, ads) {
 
     // if there are multiple ads, sort by CPM
     ads = ads.sort(_adCpmSort);
 
-    var bidResponse = bidfactory.createBid(1);
-    var ad = ads[0];
-    var size = ad.dimensions;
+    var bidResponses = [];
 
-    if (!size) {
-      // this really shouldn't happen
-      utils.logError('no dimensions given', RUBICON_BIDDER_CODE, ad);
-      return _errorBid(response, ads);
-    }
+    ads.forEach(function(ad) {
 
-    bidResponse.bidderCode = RUBICON_BIDDER_CODE;
-    bidResponse.cpm = ad.cpm;
+      var bidResponse,
+          size = ad.dimensions;
 
-    // the element id is what the iframe will use to render
-    // itself using the rubicontag.renderCreative API
-    bidResponse.ad = _creative(response.getElementId(), size);
-    bidResponse.width = size[0];
-    bidResponse.height = size[1];
-    return bidResponse;
+      if (!size) {
+        // this really shouldn't happen
+        utils.logError('no dimensions given', RUBICON_BIDDER_CODE, ad);
+        bidResponse = _errorBid(response, ads);
+      } else {
+        bidResponse = bidfactory.createBid(1, response.bid);
+
+        bidResponse.bidderCode = RUBICON_BIDDER_CODE;
+        bidResponse.cpm = ad.cpm;
+
+        // the element id is what the iframe will use to render
+        // itself using the rubicontag.renderCreative API
+        bidResponse.ad = _creative(response.getElementId(), size);
+        bidResponse.width = size[0];
+        bidResponse.height = size[1];
+
+        // DealId
+        if (ad.deal) {
+          bidResponse.dealId = ad.deal;
+        }
+      }
+
+      bidResponses.push(bidResponse);
+
+    });
+
+    return bidResponses;
   }
 
   /**
-   * Add a success/error bid based
+   * Add success/error bids based
    * on the response from rubicon
    * @param {Object} response -- AJAX response from fastlane
    */
-  function _addBid(response, ads) {
+  function _addBids(response, ads) {
     // get the bid for the placement code
-    var bid;
+    var bids;
     if (!ads || ads.length === 0) {
-      bid = _errorBid(response, ads);
+      bids = [ _errorBid(response, ads) ];
     } else {
-      bid = _makeBid(response, ads);
+      bids = _makeBids(response, ads);
     }
 
-    bidmanager.addBidResponse(response.getElementId(), bid);
+    bids.forEach(function(bid) {
+      bidmanager.addBidResponse(response.getElementId(), bid);
+    });
   }
 
   /**
@@ -161,7 +190,7 @@ var RubiconAdapter = function RubiconAdapter() {
     var accountId  = options.accountId;
     var scripttUrl = RUBICONTAG_URL + accountId + '.js';
 
-    adloader.loadScript(scripttUrl, done);
+    adloader.loadScript(scripttUrl, done, true);
   }
 
   /**
@@ -193,7 +222,7 @@ var RubiconAdapter = function RubiconAdapter() {
 
   /**
    * Define the slot using the rubicontag.defineSlot API
-   * @param {Object} Bidrequest
+   * @param {Object} bid
    * @returns {RubiconSlot} Instance of RubiconSlot
    */
   function _defineSlot(bid) {
@@ -233,6 +262,8 @@ var RubiconAdapter = function RubiconAdapter() {
 
     slot.addKW(keywords);
 
+    slot.bid = bid;
+
     return slot;
   }
 
@@ -247,7 +278,7 @@ var RubiconAdapter = function RubiconAdapter() {
     utils.logMessage('Rubicon Project bidding complete: ' + ((new Date).getTime() - _bidStart));
 
     utils._each(slots, function (slot) {
-      _addBid(slot, slot.getRawResponses());
+      _addBids(slot, slot.getRawResponses());
     });
   }
 
@@ -287,6 +318,7 @@ var RubiconAdapter = function RubiconAdapter() {
         _bidsReady(slots);
       };
 
+      window.rubicontag.setIntegration('$$PREBID_GLOBAL$$');
       window.rubicontag.run(callback, parameters);
     });
   }

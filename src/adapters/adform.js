@@ -10,11 +10,12 @@ function AdformAdapter() {
   };
 
   function _callBids(params) {
-    var callbackName = '_adf_' + utils.getUniqueIdentifierStr();
+    //var callbackName = '_adf_' + utils.getUniqueIdentifierStr();
     var bid;
     var noDomain = true;
     var bids = params.bids;
     var request = [];
+    var callbackName = '_adf_' + utils.getUniqueIdentifierStr();
 
     for (var i = 0, l = bids.length; i < l; i++) {
       bid = bids[i];
@@ -30,8 +31,8 @@ function AdformAdapter() {
       request.unshift('//adx.adform.net/adx/?rp=4');
     }
 
-    pbjs[callbackName] = handleCallback(bids);
-    request.push('callback=pbjs.' + callbackName);
+    $$PREBID_GLOBAL$$[callbackName] = handleCallback(bids);
+    request.push('callback=$$PREBID_GLOBAL$$.' + callbackName);
 
     adloader.loadScript(request.join('&'));
   }
