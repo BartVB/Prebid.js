@@ -4,7 +4,7 @@ var webpackConfig = require('./webpack.conf');
 webpackConfig.module.postLoaders = [
   {
     test: /\.js$/,
-    exclude: /(node_modules)|(test)|(integrationExamples)|(build)/,
+    exclude: /(node_modules)|(test)|(integrationExamples)|(build)|polyfill.js/,
     loader: 'istanbul-instrumenter'
   }
 ];
@@ -17,13 +17,226 @@ module.exports = function (config) {
     // base path that will be used to resolve all patterns (eg. files, exclude)
     basePath: './',
 
+    // BrowserStack Config
+    browserStack: {
+      username: process.env.BROWSERSTACK_USERNAME,
+      accessKey: process.env.BROWSERSTACK_KEY
+    },
+
+    // define browsers
+    customLaunchers: {
+      bs_ie_13_windows_10: {
+        base: 'BrowserStack',
+        os_version: '10',
+        browser: 'edge',
+        browser_version: '13.0',
+        device: null,
+        os: 'Windows'
+      },
+      bs_ie_11_windows_10: {
+        base: 'BrowserStack',
+        os_version: '10',
+        browser: 'ie',
+        browser_version: '11.0',
+        device: null,
+        os: 'Windows'
+      },
+      bs_firefox_46_windows_10: {
+        base: 'BrowserStack',
+        os_version: '10',
+        browser: 'firefox',
+        browser_version: '46.0',
+        device: null,
+        os: 'Windows'
+      },
+      bs_chrome_51_windows_10: {
+        base: 'BrowserStack',
+        os_version: '10',
+        browser: 'chrome',
+        browser_version: '51.0',
+        device: null,
+        os: 'Windows'
+      },
+      'bs_ie_11_windows_8.1': {
+        base: 'BrowserStack',
+        os_version: '8.1',
+        browser: 'ie',
+        browser_version: '11.0',
+        device: null,
+        os: 'Windows'
+      },
+      'bs_firefox_46_windows_8.1': {
+        base: 'BrowserStack',
+        os_version: '8.1',
+        browser: 'firefox',
+        browser_version: '46.0',
+        device: null,
+        os: 'Windows'
+      },
+      'bs_chrome_51_windows_8.1': {
+        base: 'BrowserStack',
+        os_version: '8.1',
+        browser: 'chrome',
+        browser_version: '51.0',
+        device: null,
+        os: 'Windows'
+      },
+      bs_ie_10_windows_8: {
+        base: 'BrowserStack',
+        os_version: '8',
+        browser: 'ie',
+        browser_version: '10.0',
+        device: null,
+        os: 'Windows'
+      },
+      bs_firefox_46_windows_8: {
+        base: 'BrowserStack',
+        os_version: '8',
+        browser: 'firefox',
+        browser_version: '46.0',
+        device: null,
+        os: 'Windows'
+      },
+      bs_chrome_51_windows_8: {
+        base: 'BrowserStack',
+        os_version: '8',
+        browser: 'chrome',
+        browser_version: '51.0',
+        device: null,
+        os: 'Windows'
+      },
+      bs_ie_11_windows_7: {
+        base: 'BrowserStack',
+        os_version: '7',
+        browser: 'ie',
+        browser_version: '11.0',
+        device: null,
+        os: 'Windows'
+      },
+      bs_ie_10_windows_7: {
+        base: 'BrowserStack',
+        os_version: '7',
+        browser: 'ie',
+        browser_version: '10.0',
+        device: null,
+        os: 'Windows'
+      },
+      bs_ie_9_windows_7: {
+        base: 'BrowserStack',
+        os_version: '7',
+        browser: 'ie',
+        browser_version: '9.0',
+        device: null,
+        os: 'Windows'
+      },
+      bs_firefox_46_windows_7: {
+        base: 'BrowserStack',
+        os_version: '7',
+        browser: 'firefox',
+        browser_version: '46.0',
+        device: null,
+        os: 'Windows'
+      },
+      bs_chrome_51_windows_7: {
+        base: 'BrowserStack',
+        os_version: '7',
+        browser: 'chrome',
+        browser_version: '51.0',
+        device: null,
+        os: 'Windows'
+      },
+      'bs_safari_9.1_mac_elcapitan': {
+        base: 'BrowserStack',
+        os_version: 'El Capitan',
+        browser: 'safari',
+        browser_version: '9.1',
+        device: null,
+        os: 'OS X'
+      },
+      bs_firefox_46_mac_elcapitan: {
+        base: 'BrowserStack',
+        os_version: 'El Capitan',
+        browser: 'firefox',
+        browser_version: '46.0',
+        device: null,
+        os: 'OS X'
+      },
+      bs_chrome_51_mac_elcapitan: {
+        base: 'BrowserStack',
+        os_version: 'El Capitan',
+        browser: 'chrome',
+        browser_version: '51.0',
+        device: null,
+        os: 'OS X'
+      },
+      bs_safari_8_mac_yosemite: {
+        base: 'BrowserStack',
+        os_version: 'Yosemite',
+        browser: 'safari',
+        browser_version: '8.0',
+        device: null,
+        os: 'OS X'
+      },
+      bs_firefox_46_mac_yosemite: {
+        base: 'BrowserStack',
+        os_version: 'Yosemite',
+        browser: 'firefox',
+        browser_version: '46.0',
+        device: null,
+        os: 'OS X'
+      },
+      bs_chrome_51_mac_yosemite: {
+        base: 'BrowserStack',
+        os_version: 'Yosemite',
+        browser: 'chrome',
+        browser_version: '51.0',
+        device: null,
+        os: 'OS X'
+      },
+      'bs_safari_7.1_mac_mavericks': {
+        base: 'BrowserStack',
+        os_version: 'Mavericks',
+        browser: 'safari',
+        browser_version: '7.1',
+        device: null,
+        os: 'OS X'
+      },
+      bs_firefox_46_mac_mavericks: {
+        base: 'BrowserStack',
+        os_version: 'Mavericks',
+        browser: 'firefox',
+        browser_version: '46.0',
+        device: null,
+        os: 'OS X'
+      },
+      bs_chrome_49_mac_mavericks: {
+        base: 'BrowserStack',
+        os_version: 'Mavericks',
+        browser: 'chrome',
+        browser_version: '49.0',
+        device: null,
+        os: 'OS X'
+      },
+      Chrome_travis_ci: {
+        base: 'Chrome',
+        flags: ['--no-sandbox']
+      }
+    },
+
     // frameworks to use
     // available frameworks: https://npmjs.org/browse/keyword/karma-adapter
     frameworks: ['es5-shim', 'mocha', 'expect', 'sinon'],
 
+    client: {
+      mocha: {
+        reporter: 'html'
+      }
+    },
+
     // list of files / patterns to load in the browser
     files: [
-      'test/**/*_spec.js'
+      'test/**/*_spec.js',
+      'test/helpers/karma-init.js'
     ],
 
     // list of files to exclude
@@ -33,6 +246,7 @@ module.exports = function (config) {
     // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
     preprocessors: {
       'test/**/*_spec.js': ['webpack'],
+      '!test/**/*_spec.js': 'coverage',
       'src/**/*.js': ['webpack', 'coverage']
     },
 
@@ -90,6 +304,7 @@ module.exports = function (config) {
     singleRun: false,
 
     plugins: [
+      'karma-browserstack-launcher',
       'karma-phantomjs-launcher',
       'karma-nyan-reporter',
       'karma-coverage',

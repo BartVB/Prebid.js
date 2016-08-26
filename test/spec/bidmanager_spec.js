@@ -5,6 +5,8 @@ var assert = require("assert");
 //TODO refactor to use the spec files
 var utils = require('../../src/utils');
 var bidmanager = require('../../src/bidmanager');
+var bidfactory = require('../../src/bidfactory');
+var fixtures = require('../fixtures/fixtures');
 
 describe('replaceTokenInString', function () {
 
@@ -71,7 +73,7 @@ describe('bidmanager.js', function () {
     });
 
     it('Custom configuration for all bidders', function () {
-      pbjs.bidderSettings =
+      $$PREBID_GLOBAL$$.bidderSettings =
       {
         standard: {
           adserverTargeting: [
@@ -115,7 +117,7 @@ describe('bidmanager.js', function () {
     });
 
     it('Custom configuration for one bidder', function () {
-      pbjs.bidderSettings =
+      $$PREBID_GLOBAL$$.bidderSettings =
       {
         appnexus: {
           adserverTargeting: [
@@ -159,7 +161,7 @@ describe('bidmanager.js', function () {
     });
 
     it('Custom configuration for one bidder - not matched', function () {
-      pbjs.bidderSettings =
+      $$PREBID_GLOBAL$$.bidderSettings =
       {
         nonExistentBidder: {
           adserverTargeting: [
@@ -203,7 +205,7 @@ describe('bidmanager.js', function () {
     });
 
     it('Custom bidCpmAdjustment for one bidder and inherit standard', function () {
-      pbjs.bidderSettings =
+      $$PREBID_GLOBAL$$.bidderSettings =
       {
         appnexus: {
           bidCpmAdjustment: function (bidCpm) {
@@ -241,7 +243,7 @@ describe('bidmanager.js', function () {
     });
 
     it('Custom bidCpmAdjustment AND custom configuration for one bidder and inherit standard settings', function () {
-      pbjs.bidderSettings =
+      $$PREBID_GLOBAL$$.bidderSettings =
       {
         appnexus: {
           bidCpmAdjustment: function (bidCpm) {
@@ -310,7 +312,7 @@ describe('bidmanager.js', function () {
     });
 
     it('alwaysUseBid=true and inherit custom', function () {
-      pbjs.bidderSettings =
+      $$PREBID_GLOBAL$$.bidderSettings =
       {
         appnexus: {
           alwaysUseBid: true,
@@ -346,5 +348,152 @@ describe('bidmanager.js', function () {
 
     });
 
+    it('suppressEmptyKeys=true' , function() {
+      $$PREBID_GLOBAL$$.bidderSettings =
+      {
+        standard: {
+          suppressEmptyKeys: true,
+          adserverTargeting: [
+            {
+              key: "aKeyWithAValue",
+              val: 42
+            },
+            {
+              key: "aKeyWithAnEmptyValue",
+              val: ""
+            }
+          ]
+        }
+      };
+
+      var expected = {
+        "aKeyWithAValue": 42
+      };
+
+      var response = bidmanager.getKeyValueTargetingPairs(bidderCode, bid);
+      assert.deepEqual(response, expected);
+    });
+
+    it('sendStandardTargeting=false and inherit custom', function () {
+      $$PREBID_GLOBAL$$.bidderSettings =
+      {
+        appnexus: {
+          alwaysUseBid: true,
+          sendStandardTargeting: false,
+          adserverTargeting: [
+            {
+              key: "hb_bidder",
+              val: function (bidResponse) {
+                return bidResponse.bidderCode;
+              }
+            }, {
+              key: "hb_adid",
+              val: function (bidResponse) {
+                return bidResponse.adId;
+              }
+            }, {
+              key: "hb_pb",
+              val: function (bidResponse) {
+                return bidResponse.pbHg;
+              }
+            }, {
+              key: "custom",
+              val: 42
+            }
+          ]
+        }
+      };
+
+      var expected = {
+        "custom": 42
+      };
+      var response = bidmanager.getKeyValueTargetingPairs(bidderCode, bid);
+      assert.deepEqual(response, expected);
+
+    });
+
+  });
+
+  describe('adjustBids', () => {
+    it('should adjust bids and pass copy of bid object', () => {
+      const bid = Object.assign({},
+        bidfactory.createBid(2),
+        fixtures.getBidResponses()[5]
+      );
+
+      assert.equal(bid.cpm, .5);
+
+      $$PREBID_GLOBAL$$.bidderSettings =
+      {
+        brealtime: {
+          bidCpmAdjustment: function (bidCpm, bidObj) {
+            assert.deepEqual(bidObj, bid);
+            return bidCpm * 0.5;
+          },
+        },
+        standard: {
+          adserverTargeting: [
+          ]
+        }
+      };
+
+      bidmanager.adjustBids(bid)
+      assert.equal(bid.cpm, .25);
+
+    });
+  });
+
+  describe('addBidResponse', () => {
+    before(() => {
+      $$PREBID_GLOBAL$$.adUnits = fixtures.getAdUnits();
+    });
+
+    it('should return proper price bucket increments for dense mode', () => {
+      const bid = Object.assign({},
+        bidfactory.createBid(2),
+        fixtures.getBidResponses()[5]
+      );
+
+      // 0 - 3 dollars
+      bid.cpm = '1.99';
+      let expectedIncrement = '1.99';
+      bidmanager.addBidResponse(bid.adUnitCode, bid);
+      // pop this bid because another test relies on global $$PREBID_GLOBAL$$._bidsReceived
+      let registeredBid = $$PREBID_GLOBAL$$._bidsReceived.pop();
+      assert.equal(registeredBid.pbDg, expectedIncrement, '0 - 3 hits at to 1 cent increment');
+
+      // 3 - 8 dollars
+      bid.cpm = '4.39';
+      expectedIncrement = '4.35';
+      bidmanager.addBidResponse(bid.adUnitCode, bid);
+      registeredBid = $$PREBID_GLOBAL$$._bidsReceived.pop();
+      assert.equal(registeredBid.pbDg, expectedIncrement, '3 - 8 hits at 5 cent increment');
+
+      // 8 - 20 dollars
+      bid.cpm = '19.99';
+      expectedIncrement = '19.50';
+      bidmanager.addBidResponse(bid.adUnitCode, bid);
+      registeredBid = $$PREBID_GLOBAL$$._bidsReceived.pop();
+      assert.equal(registeredBid.pbDg, expectedIncrement, '8 - 20 hits at 50 cent increment');
+
+      // 20+ dollars
+      bid.cpm = '73.07';
+      expectedIncrement = '20.00';
+      bidmanager.addBidResponse(bid.adUnitCode, bid);
+      registeredBid = $$PREBID_GLOBAL$$._bidsReceived.pop();
+      assert.equal(registeredBid.pbDg, expectedIncrement, '20+ caps at 20.00');
+    });
+
+    it('should place dealIds in adserver targeting', () => {
+      const bid = Object.assign({},
+        bidfactory.createBid(2),
+        fixtures.getBidResponses()[0]
+      );
+
+      bid.dealId = "test deal";
+      bidmanager.addBidResponse(bid.adUnitCode, bid);
+      const addedBid = $$PREBID_GLOBAL$$._bidsReceived.pop();
+      assert.equal(addedBid.adserverTargeting[`hb_deal_${bid.bidderCode}`], bid.dealId, 'dealId placed in adserverTargeting');
+    });
   });
 });

@@ -360,7 +360,7 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
       utils.logError('Too many unique sizes on slots, will use the first 20.', ADAPTER_NAME);
     }
 
-    bidmanager.setExpectedBidsCount(ADAPTER_CODE, expectedBids);
+    //bidmanager.setExpectedBidsCount(ADAPTER_CODE, expectedBids);
     adloader.loadScript(cygnus_index_start());
 
     var responded = false;
@@ -438,6 +438,10 @@ var IndexExchangeAdapter = function IndexExchangeAdapter() {
       } catch (e) {
         utils.logError('Error calling index adapter', ADAPTER_NAME, e);
         logErrorBidResponse();
+      }
+      finally {
+        // ensure that previous targeting mapping is cleared
+        _IndexRequestData.targetIDToBid = {};
       }
 
       //slotIdMap is used to determine which slots will be bid on in a given request.
