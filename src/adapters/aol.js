@@ -140,7 +140,8 @@ var AolAdapter = function AolAdapter() {
       },
       params: {
         cors: 'yes',
-        cmd: 'bid'
+        cmd: 'bid',
+        bidfloor: (typeof bid.params.bidFloor !== "undefined") ? bid.params.bidFloor.toString() : ''
       },
       pubApiConfig: ADTECH_PUBAPI_CONFIG,
       placementCode: bid.placementCode
@@ -176,7 +177,7 @@ var AolAdapter = function AolAdapter() {
     window.dacBidRequestConfigs = window.dacBidRequestConfigs || {};
     bids = params.bids;
     if (!bids || !bids.length) return;
-    adloader.loadScript(ADTECH_URI, _reqBids);
+    adloader.loadScript(ADTECH_URI, _reqBids, true);
   }
 
   return {

@@ -5,10 +5,12 @@
 
 'use strict';
 
+
 const fs = require('fs');
 const blockLoader = require('block-loader');
-const adapters = require('../package.json').adapters;
+const getAdapters = require('./getAdapters');
 
+const adapters = getAdapters('../adapters.json');
 const files = fs.readdirSync('src/adapters').map((file) => file.replace(/\.[^/.]+$/, ''));
 const adapterNames = adapters.map(getNames).filter(getUniques);
 const aliases = adapters.filter(getAliases);
@@ -27,7 +29,7 @@ var options = {
 function insertAdapters() {
 
   if (!adapters) {
-    console.log('Prebid Warning: adapters config not found in package.json, no adapters will' +
+    console.log('Prebid Warning: adapters config not found in adapters.json, no adapters will' +
       ' be loaded');
     return '';
   }
@@ -47,13 +49,8 @@ function insertAdapters() {
   }
 
   return inserts.map(name => {
-    if (name === 'appnexusAst') {
-      return `import { AppnexusAst } from './adapters/appnexusAst';
-        exports.registerBidAdapter(new AppnexusAst('appnexus'), 'appnexus');\n`;
-    } else {
-      return `var ${adapterName(name)} = require('./adapters/${name}.js');
-        exports.registerBidAdapter(new ${adapterName(name)}${useCreateNew(name)}(), '${name}');\n`;
-    }
+    return `var ${adapterName(name)} = require('./adapters/${name}.js');
+    exports.registerBidAdapter(new ${adapterName(name)}${useCreateNew(name)}(), '${name}');\n`;
   })
     .concat(aliases.map(adapter => {
       const name = Object.keys(adapter)[0];
@@ -78,7 +75,7 @@ function adapterName(adapter) {
  * @returns {string}
  */
 function useCreateNew(adapter) {
-  return adapter === 'appnexus' ? '.createNew' : '';
+  return ['appnexus', 'appnexusAst'].includes(adapter) ? '.createNew' : '';
 }
 
 /**

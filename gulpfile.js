@@ -18,17 +18,22 @@ var concat = require('gulp-concat');
 var jscs = require('gulp-jscs');
 var header = require('gulp-header');
 var zip = require('gulp-zip');
+var replace = require('gulp-replace');
+var shell = require('gulp-shell');
 
 var CI_MODE = process.env.NODE_ENV === 'ci';
 var prebid = require('./package.json');
 var dateString = 'Updated : ' + (new Date()).toISOString().substring(0, 10);
 var packageNameVersion = prebid.name + '_' + prebid.version;
-var banner = '/* <%= prebid.name %> v<%= prebid.version %> \n' + dateString + ' */\n';
+var banner = '/* <%= prebid.name %> v<%= prebid.version %>\n' + dateString + ' */\n';
+var analyticsDirectory = '../analytics';
 
 // Tasks
 gulp.task('default', ['clean', 'quality', 'webpack']);
 
 gulp.task('serve', ['clean', 'quality', 'devpack', 'webpack', 'watch', 'test']);
+
+gulp.task('run-tests', ['clean', 'quality', 'webpack', 'test']);
 
 gulp.task('build', ['clean', 'quality', 'webpack', 'devpack', 'zip']);
 
@@ -41,8 +46,10 @@ gulp.task('clean', function () {
 
 gulp.task('devpack', function () {
   webpackConfig.devtool = 'source-map';
-  return gulp.src(['src/prebid.js'])
+  const analyticsSources = helpers.getAnalyticsSources(analyticsDirectory);
+  return gulp.src([].concat(analyticsSources, 'src/prebid.js'))
     .pipe(webpack(webpackConfig))
+    .pipe(replace('$prebid.version$', prebid.version))
     .pipe(gulp.dest('build/dev'))
     .pipe(connect.reload());
 });
@@ -56,8 +63,10 @@ gulp.task('webpack', function () {
 
   webpackConfig.devtool = null;
 
-  return gulp.src(['src/prebid.js'])
+  const analyticsSources = helpers.getAnalyticsSources(analyticsDirectory);
+  return gulp.src([].concat(analyticsSources, 'src/prebid.js'))
     .pipe(webpack(webpackConfig))
+    .pipe(replace('$prebid.version$', prebid.version))
     .pipe(uglify())
     .pipe(header(banner, { prebid: prebid }))
     .pipe(gulp.dest('build/dist'))
@@ -77,6 +86,39 @@ gulp.task('zip', ['jscs', 'clean', 'webpack'], function () {
 gulp.task('test', function () {
   var defaultBrowsers = CI_MODE ? ['PhantomJS'] : ['Chrome'];
   var browserArgs = helpers.parseBrowserArgs(argv).map(helpers.toCapitalCase);
+
+  if (process.env.TRAVIS) {
+    browserArgs = ['Chrome_travis_ci'];
+  }
+
+  if (argv.browserstack) {
+    browserArgs = [
+      'bs_ie_13_windows_10',
+      'bs_ie_11_windows_10',
+      'bs_firefox_46_windows_10',
+      'bs_chrome_51_windows_10',
+      'bs_ie_11_windows_8.1',
+      'bs_firefox_46_windows_8.1',
+      'bs_chrome_51_windows_8.1',
+      'bs_ie_10_windows_8',
+      'bs_firefox_46_windows_8',
+      'bs_chrome_51_windows_8',
+      'bs_ie_11_windows_7',
+      'bs_ie_10_windows_7',
+      'bs_ie_9_windows_7',
+      'bs_firefox_46_windows_7',
+      'bs_chrome_51_windows_7',
+      'bs_safari_9.1_mac_elcapitan',
+      'bs_firefox_46_mac_elcapitan',
+      'bs_chrome_51_mac_elcapitan',
+      'bs_safari_8_mac_yosemite',
+      'bs_firefox_46_mac_yosemite',
+      'bs_chrome_51_mac_yosemite',
+      'bs_safari_7.1_mac_mavericks',
+      'bs_firefox_46_mac_mavericks',
+      'bs_chrome_49_mac_mavericks'
+    ];
+  }
 
   return gulp.src('lookAtKarmaConfJS')
     .pipe(karma({
@@ -99,6 +141,13 @@ gulp.task('coverage', function (done) {
   done();
 });
 
+gulp.task('coveralls', ['test'], function() { // 2nd arg is a dependency: 'test' must be finished
+  // first send results of istanbul's test coverage to coveralls.io.
+  return gulp.src('gulpfile.js', { read: false }) // You have to give it a file, but you don't
+  // have to read it.
+    .pipe(shell('cat build/coverage/lcov/lcov.info | node_modules/coveralls/bin/coveralls.js'));
+});
+
 // Watch Task with Live Reload
 gulp.task('watch', function () {
 
@@ -117,7 +166,8 @@ gulp.task('quality', ['hint', 'jscs']);
 gulp.task('hint', function () {
   return gulp.src('src/**/*.js')
     .pipe(jshint('.jshintrc'))
-    .pipe(jshint.reporter('default'));
+    .pipe(jshint.reporter('default'))
+    .pipe(jshint.reporter('fail'));
 });
 
 gulp.task('jscs', function () {
@@ -141,4 +191,3 @@ gulp.task('docs', ['clean-docs'], function () {
     })
     .pipe(gulp.dest('docs'));
 });
-
