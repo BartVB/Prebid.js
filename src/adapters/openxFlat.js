@@ -46,7 +46,7 @@ var OpenxFlatAdapter = function OpenxFlatAdapter(options) {
     adloader.loadScript(requestUrl);
   }
 
-  pbjs.OpenxCbHandler = function (response) {
+  $$PREBID_GLOBAL$$.OpenxCbHandler = function (response) {
     for (var i = 0; i < bids.length; i++) {
       var bid = bids[i];
       var auid = parseInt(bid.params.unit);
