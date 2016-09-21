@@ -1,6 +1,7 @@
 var bidfactory = require('../bidfactory.js');
 var bidmanager = require('../bidmanager.js');
-var adloader = require('../adloader');
+var adloader = require('../adloader.js');
+var utils = require('../utils.js');
 
 /**
  * Adapter for requesting ads from OpenX without using RTB.
@@ -43,6 +44,7 @@ var OpenxFlatAdapter = function OpenxFlatAdapter(options) {
     }
 
     var requestUrl = _getRequestUrl(scriptUrl, auids);
+    utils.logMessage('Sending openxFlat request: ' + requestUrl);
     adloader.loadScript(requestUrl);
   }
 
