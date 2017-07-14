@@ -42,7 +42,9 @@ var CriteoAdapter = function CriteoAdapter() {
       '&varName=' + encodeURI(varname);
 
     // Create a zero latency bid based on the Criteo cookie (if available)
-    _processBid(bid, _getCookieValue(bid.params.cookiename));
+    // TODO: Disabled for now. Prebid no longer overwrites multiple responses for the same bid. This results in
+    // bid responses that get dropped because Criteo returns 2 bids when only one is requested.
+    //_processBid(bid, _getCookieValue(bid.params.cookiename));
 
     adloader.loadScript(scriptUrl, function (response) {
       // Create bid based on Criteo response

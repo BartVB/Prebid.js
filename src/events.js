@@ -22,6 +22,10 @@ module.exports = (function () {
   var _handlers = {};
   var _public = {};
 
+  function add(a, b) {
+    return a + b;
+  }
+
   /**
    *
    * @param {String} eventString  The name of the event.
@@ -29,7 +33,14 @@ module.exports = (function () {
    * @private
    */
   function _dispatch(eventString, args) {
-    utils.logMessage('Emitting event for: ' + eventString);
+    //utils.logMessage('Emitting event for: ' + eventString);
+    var dbgMsg = "";
+    if ($$PREBID_GLOBAL$$._bidsRequested.length) {
+      var requested = $$PREBID_GLOBAL$$._bidsRequested.map(bidSet => bidSet.bids.length).reduce(add);
+      var received = $$PREBID_GLOBAL$$._bidsReceived.length;
+      dbgMsg = " (" + requested + "/" + received + ")";
+    }
+    //utils.logMessage("Emitting event for: " + eventString + dbgMsg);
 
     var eventPayload = args[0] || {};
     var idPath = idPaths[eventString];

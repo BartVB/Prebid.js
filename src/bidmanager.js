@@ -68,6 +68,7 @@ function getBidSetForBidder(bidder) {
  *   This function should be called to by the bidder adapter to register a bid response
  */
 exports.addBidResponse = function (adUnitCode, bid) {
+
   if (bid) {
 
     Object.assign(bid, {
@@ -123,6 +124,14 @@ exports.addBidResponse = function (adUnitCode, bid) {
   if (bidsBackAll()) {
     this.executeCallback();
   }
+
+  var dbgMsg = "";
+  if ($$PREBID_GLOBAL$$._bidsRequested.length) {
+    var requested = $$PREBID_GLOBAL$$._bidsRequested.map(bidSet => bidSet.bids.length).reduce(add);
+    var received = $$PREBID_GLOBAL$$._bidsReceived.length;
+    dbgMsg = " (" + requested + "/" + received + ")";
+  }
+  utils.logMessage("Processed bid response: " + bid.bidderCode + "/" + bid.adUnitCode + dbgMsg);
 };
 
 function getKeyValueTargetingPairs(bidderCode, custBidObj) {
